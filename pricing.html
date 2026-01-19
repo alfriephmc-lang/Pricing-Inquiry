@@ -88,64 +88,73 @@ const supabase = window.supabase.createClient(
   'sb_publishable_4SRJECxF1Sr9jc7GwB5vYQ_cZut4BWG'
 );
 
-let allData=[];
+let allData = [];
 
-async function loadData(){
-  const {data,error}=await supabase
+async function loadData() {
+  console.log("Fetching data...");
+  const { data, error } = await supabase
     .from('pricing_database')
     .select('*')
     .order('item_code');
 
-  if(error){alert(error.message);return;}
-  allData=data;
-  render(data);
+  if (error) {
+    console.error("Supabase Error:", error);
+    alert("Error fetching data: " + error.message);
+    return;
+  }
+
+  console.log("Data received:", data); // Check your browser console (F12) to see if data arrived
+  allData = data || [];
+  render(allData);
 }
 
-function render(rows){
-  const body=document.getElementById('table-body');
-  body.innerHTML='';
-  rows.forEach(r=>{
-    body.innerHTML+=`
+function render(rows) {
+  const body = document.getElementById('table-body');
+  if (!rows || rows.length === 0) {
+    body.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-400">No items found</td></tr>';
+    return;
+  }
+
+  // Use map for faster rendering and added safety checks
+  body.innerHTML = rows.map(r => `
     <tr class="border-b border-white/5 hover:bg-white/5">
-      <td class="py-2">${r.item_code}</td>
-      <td>${r.item_description}</td>
-      <td>₱${Number(r.price).toLocaleString()}</td>
-      <td>${r.remarks||''}</td>
-    </tr>`;
-  });
+      <td class="py-2 px-2">${r.item_code || 'N/A'}</td>
+      <td class="px-2">${r.item_description || 'No Description'}</td>
+      <td class="px-2">₱${r.price ? Number(r.price).toLocaleString() : '0'}</td>
+      <td class="px-2">${r.remarks || ''}</td>
+    </tr>
+  `).join('');
 }
 
 /* SEARCH */
 document.getElementById('search').addEventListener('input', e => {
-  const q = e.target.value.toLowerCase();
+  const q = e.target.value.toLowerCase().trim();
   
   const filtered = allData.filter(r => {
-    // We use (string || '') to ensure we don't call .toLowerCase() on null
-    const code = (r.item_code || '').toLowerCase();
-    const desc = (r.item_description || '').toLowerCase();
-    
+    // String() ensures that if a code is a number, it doesn't crash
+    const code = String(r.item_code || '').toLowerCase();
+    const desc = String(r.item_description || '').toLowerCase();
     return code.includes(q) || desc.includes(q);
   });
   
   render(filtered);
 });
 
-/* AUTH GUARD */
-async function checkAuth(){
-  const {data:{session}}=await supabase.auth.getSession();
-  if(!session) location.href="index.html";
-}
-
-/* LOGOUT */
-async function logout(){
-  await supabase.auth.signOut();
-  location.href="index.html";
+/* AUTH GUARD & INITIALIZE */
+async function checkAuth() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    console.log("No session found, redirecting...");
+    // location.href = "index.html"; // Uncomment this when ready
+  } else {
+    loadData();
+  }
 }
 
 checkAuth();
-loadData();
 </script>
 
 </body>
 </html>
+
 
