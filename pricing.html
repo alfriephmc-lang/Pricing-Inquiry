@@ -116,12 +116,17 @@ function render(rows){
 }
 
 /* SEARCH */
-document.getElementById('search').addEventListener('input',e=>{
-  const q=e.target.value.toLowerCase();
-  const filtered=allData.filter(r=>
-    r.item_code.toLowerCase().includes(q) ||
-    r.item_description.toLowerCase().includes(q)
-  );
+document.getElementById('search').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  
+  const filtered = allData.filter(r => {
+    // We use (string || '') to ensure we don't call .toLowerCase() on null
+    const code = (r.item_code || '').toLowerCase();
+    const desc = (r.item_description || '').toLowerCase();
+    
+    return code.includes(q) || desc.includes(q);
+  });
+  
   render(filtered);
 });
 
@@ -143,3 +148,4 @@ loadData();
 
 </body>
 </html>
+
