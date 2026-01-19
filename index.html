@@ -239,28 +239,36 @@
     window.addEventListener('resize', resize);
     resize(); animate();
 
-    // Redirection point to Home.html
-    document.addEventListener("DOMContentLoaded", () => {
-      const supabase = window.supabase.createClient('https://yheciygtsimcduzeavlq.supabase.co', 'sb_publishable_4SRJECxF1Sr9jc7GwB5vYQ_cZut4BWG');
-      const form = document.getElementById('login-form');
-      const errorBox = document.getElementById('error');
-      
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        errorBox.classList.add('hidden');
-        const { error } = await supabase.auth.signInWithPassword({
-          email: document.getElementById('email').value,
-          password: document.getElementById('password').value
-        });
-        if (error) { 
-          errorBox.textContent = error.message; 
-          errorBox.classList.remove('hidden'); 
-        } else { 
-          // REDIRECT TO HOME.HTML
-          window.location.href = "home.html"; 
-        }
-      });
+    // Redirection point to pricing.html
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const supabase = window.supabase.createClient(
+    'https://yheciygtsimcduzeavlq.supabase.co',
+    'sb_publishable_4SRJECxF1Sr9jc7GwB5vYQ_cZut4BWG'
+  );
+
+  const form = document.getElementById('login-form');
+  const errorBox = document.getElementById('error');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.classList.add('hidden');
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: document.getElementById('email').value,
+      password: document.getElementById('password').value
     });
-  </script>
+
+    if (error) {
+      errorBox.textContent = error.message;
+      errorBox.classList.remove('hidden');
+    } else {
+      // CONNECT TO PRICING PAGE
+      window.location.href = "pricing.html";
+    }
+  });
+});
+</script>
 </body>
+
 </html>
