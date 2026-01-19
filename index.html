@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Staff Portal | Login</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --corp-green: #007941;
+      --corp-light: #10b981;
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.2);
+    }
+
+    body {
+      margin: 0; padding: 0; overflow: hidden;
+      background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
+      font-family: ui-sans-serif, system-ui;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      perspective: 1200px;
+    }
+
+    #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
+
+    /* --- THE GLASS CARD --- */
+    .glass-card {
+      position: relative;
+      width: 100%;
+      max-width: 380px; 
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 2.5rem;
+      padding: 2.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      
+      /* Entry Animation */
+      opacity: 0;
+      transform: translateZ(-300px) scale(0.3);
+      animation: cardProject 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      overflow: hidden; 
+    }
+
+    /* --- SCANNER EFFECT --- */
+    .glass-card::after {
+      content: "";
+      position: absolute;
+      top: -100%;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        var(--corp-light),
+        transparent
+      );
+      animation: scan 4s linear infinite;
+      box-shadow: 0 0 15px var(--corp-light);
+    }
+
+    @keyframes scan {
+      0% { top: -10%; }
+      100% { top: 110%; }
+    }
+
+    @keyframes cardProject {
+      to { opacity: 1; transform: translateZ(0px) scale(1); }
+    }
+
+    /* --- GLASS FOOTER --- */
+    .social-footnote {
+      position: fixed; bottom: 25px; right: 25px;
+      display: flex; align-items: center;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 6px; border-radius: 50px;
+      width: 38px; height: 38px;
+      transition: all 0.4s ease;
+      cursor: pointer; z-index: 100;
+    }
+
+    .social-footnote:hover { width: 140px; background: rgba(255, 255, 255, 0.15); }
+
+    .fb-icon {
+      background: rgba(255, 255, 255, 0.2);
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    input {
+      background: rgba(0, 0, 0, 0.2) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      color: white !important;
+    }
+
+    input:focus { border-color: var(--corp-light) !important; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important; }
+
+    .attribution-info {
+      position: fixed; bottom: 25px; left: 25px;
+      color: rgba(255, 255, 255, 0.4); font-size: 10px;
+      text-transform: uppercase; letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="glass-card">
+    <div class="flex justify-center mb-6">
+      <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-16 w-auto object-contain brightness-110" />
+    </div>
+
+    <div class="text-center mb-8">
+      <h2 class="text-xl font-bold text-white tracking-tight">Staff Portal</h2>
+      <p class="text-emerald-400 text-[9px] uppercase tracking-[0.3em] font-bold">Secure Access Layer</p>
+    </div>
+
+    <form id="login-form" class="space-y-5">
+      <div>
+        <label class="block pl-1 text-[9px] font-bold text-emerald-500 uppercase tracking-widest mb-2">Identifier</label>
+        <input id="email" type="email" required placeholder="email@hospital.com"
+          class="w-full px-4 py-3 rounded-xl outline-none transition-all text-sm" />
+      </div>
+
+      <div>
+        <label class="block pl-1 text-[9px] font-bold text-emerald-500 uppercase tracking-widest mb-2">Access Key</label>
+        <input id="password" type="password" required placeholder="••••••••"
+          class="w-full px-4 py-3 rounded-xl outline-none transition-all text-sm" />
+      </div>
+
+      <button type="submit"
+        class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all text-xs uppercase tracking-widest shadow-lg shadow-emerald-900/20 active:scale-95">
+        Initialize Login
+      </button>
+    </form>
+
+    <p id="error" class="hidden text-red-400 text-center mt-4 text-[10px] bg-red-900/20 p-2 rounded-lg"></p>
+
+    <div class="mt-8 pt-6 border-t border-white/5 flex items-center justify-center gap-2">
+      <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></div>
+      <span class="text-[9px] font-bold text-emerald-500/60 uppercase tracking-widest">System Online</span>
+    </div>
+  </div>
+
+  <div class="attribution-info">Created by: <strong>Projectvibe</strong></div>
+  
+  <div class="social-footnote">
+    <div class="fb-icon">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg>
+    </div>
+    <div class="hidden-actions ml-3 flex gap-4">
+      <span class="text-[10px] font-bold text-white uppercase">Follow</span>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let molecules = [];
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initMolecules();
+    }
+
+    class Molecule {
+      constructor() { this.init(); }
+      init() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 1.2;
+        this.vy = (Math.random() - 0.5) * 1.2;
+        this.angle = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.015;
+        this.scale = Math.random() * 0.4 + 0.6;
+        this.structure = [
+          { x: 0, y: 0, r: 8, color: 'rgba(255, 255, 255, 0.3)' },
+          { x: 30, y: 0, r: 6, color: 'rgba(255, 255, 255, 0.15)' },
+          { x: -20, y: 25, r: 6, color: 'rgba(255, 255, 255, 0.15)' },
+          { x: -20, y: -25, r: 6, color: 'rgba(255, 255, 255, 0.15)' }
+        ];
+        this.bonds = [[0, 1], [0, 2], [0, 3]];
+      }
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.scale(this.scale, this.scale);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 2;
+        this.bonds.forEach(bond => {
+          ctx.beginPath();
+          ctx.moveTo(this.structure[bond[0]].x, this.structure[bond[0]].y);
+          ctx.lineTo(this.structure[bond[1]].x, this.structure[bond[1]].y);
+          ctx.stroke();
+        });
+        this.structure.forEach(atom => {
+          ctx.beginPath();
+          ctx.arc(atom.x, atom.y, atom.r, 0, Math.PI * 2);
+          ctx.fillStyle = atom.color;
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+      update() {
+        this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
+        const pad = 100;
+        if (this.x > canvas.width + pad) this.x = -pad;
+        else if (this.x < -pad) this.x = canvas.width + pad;
+        if (this.y > canvas.height + pad) this.y = -pad;
+        else if (this.y < -pad) this.y = canvas.height + pad;
+      }
+    }
+
+    function initMolecules() {
+      molecules = [];
+      const density = window.innerWidth < 640 ? 60000 : 45000;
+      const count = Math.floor((canvas.width * canvas.height) / density); 
+      for (let i = 0; i < count; i++) molecules.push(new Molecule());
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      molecules.forEach(m => { m.update(); m.draw(); });
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', resize);
+    resize(); animate();
+
+    // Redirection point to Home.html
+    document.addEventListener("DOMContentLoaded", () => {
+      const supabase = window.supabase.createClient('https://yheciygtsimcduzeavlq.supabase.co', 'sb_publishable_4SRJECxF1Sr9jc7GwB5vYQ_cZut4BWG');
+      const form = document.getElementById('login-form');
+      const errorBox = document.getElementById('error');
+      
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorBox.classList.add('hidden');
+        const { error } = await supabase.auth.signInWithPassword({
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value
+        });
+        if (error) { 
+          errorBox.textContent = error.message; 
+          errorBox.classList.remove('hidden'); 
+        } else { 
+          // REDIRECT TO HOME.HTML
+          window.location.href = "home.html"; 
+        }
+      });
+    });
+  </script>
+</body>
+</html>
