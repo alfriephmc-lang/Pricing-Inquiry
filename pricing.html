@@ -100,7 +100,8 @@ async function loadData() {
   const { data, error } = await client
     .from('pricing_database')
     .select('*')
-    .order('item_code');
+    .order('item_code')
+    .range(0, 3000); // This ensures you get all 1,503+ rows
 
   if (error) {
     console.error("Fetch error:", error.message);
@@ -167,3 +168,4 @@ checkAuth();
 
 </body>
 </html>
+
