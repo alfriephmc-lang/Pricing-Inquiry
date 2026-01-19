@@ -60,7 +60,7 @@ input:focus{
   </button>
 </div>
 
-<input id="search" placeholder="Search item code or description..."
+<input id="search" placeholder="Search item code or description (e.g. Maternity or EEG)..."
 class="w-full px-4 py-3 rounded-xl mb-5 text-sm">
 
 <div class="overflow-auto max-h-[60vh]">
@@ -73,50 +73,34 @@ class="w-full px-4 py-3 rounded-xl mb-5 text-sm">
   <th class="px-2">Remarks</th>
 </tr>
 </thead>
-<tbody id="table-body"></tbody>
+<tbody id="table-body">
+  <tr><td colspan="4" class="text-center py-10 text-gray-400 italic">Type to search the database...</td></tr>
+</tbody>
 </table>
 </div>
 
 </div>
 
 <script>
-// Use a single initialization check to prevent SyntaxErrors
 let supabaseClient;
 
 function initSupabase() {
   if (!supabaseClient) {
     supabaseClient = window.supabase.createClient(
       'https://yheciygtsimcduzeavlq.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZWNpeWd0c2ltY2R1emVhdmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MDExMDgsImV4cCI6MjA4NDM3NzEwOH0.jfzpbDv4EX16D7_Ee_yWz2o3L_X7JWilKmefhjclguc' // Ensure this is your public 'anon' key
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZWNpeWd0c2ltY2R1emVhdmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MDExMDgsImV4cCI6MjA4NDM3NzEwOH0.jfzpbDv4EX16D7_Ee_yWz2o3L_X7JWilKmefhjclguc'
     );
   }
   return supabaseClient;
 }
 
 const client = initSupabase();
-let allData = [];
-
-async function loadData() {
-  const { data, error } = await client
-    .from('pricing_database')
-    .select('*')
-    .order('item_code')
-    .range(0, 2000); // This ensures you get all 1,503+ rows
-
-  if (error) {
-    console.error("Fetch error:", error.message);
-    return;
-  }
-
-  allData = data || [];
-  render(allData);
-}
 
 function render(rows) {
   const body = document.getElementById('table-body');
   
   if (!rows || rows.length === 0) {
-    body.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-gray-400">No items found</td></tr>';
+    body.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-gray-400">No matching items found</td></tr>';
     return;
   }
 
@@ -124,36 +108,44 @@ function render(rows) {
     <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
       <td class="py-3 px-2 font-mono text-emerald-300">${r.item_code || '—'}</td>
       <td class="px-2">${r.item_description || 'No Description'}</td>
-      <td class="px-2">₱${r.price ? Number(r.price).toLocaleString() : '0.00'}</td>
-      <td class="px-2 text-gray-400 text-xs">${r.remarks || ''}</td>
+      <td class="px-2">₱${r.price ? Number(String(r.price).replace(/,/g, '')).toLocaleString(undefined, {minimumFractionDigits: 2}) : '0.00'}</td>
+      <td class="px-2 text-gray-400 text-[11px] leading-tight">${r.remarks || ''}</td>
     </tr>
   `).join('');
 }
 
-/* SEARCH FUNCTIONALITY */
-document.getElementById('search').addEventListener('input', e => {
-  const q = e.target.value.toLowerCase().trim();
-  
-  const filtered = allData.filter(r => {
-    const code = String(r.item_code || '').toLowerCase();
-    const desc = String(r.item_description || '').toLowerCase();
-    return code.includes(q) || desc.includes(q);
-  });
-  
-  render(filtered);
+/* SERVER-SIDE SEARCH FUNCTIONALITY */
+document.getElementById('search').addEventListener('input', async (e) => {
+  const q = e.target.value.trim();
+  const body = document.getElementById('table-body');
+
+  // If input is empty, clear the table
+  if (q.length < 2) {
+    body.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-gray-400 italic">Type at least 2 characters to search...</td></tr>';
+    return;
+  }
+
+  // Search directly on the Supabase server
+  const { data, error } = await client
+    .from('pricing_database')
+    .select('*')
+    .or(`item_code.ilike.%${q}%,item_description.ilike.%${q}%`)
+    .limit(50); // Shows top 50 matches for speed
+
+  if (error) {
+    console.error("Search error:", error.message);
+    return;
+  }
+
+  render(data);
 });
 
 /* AUTH & LOGOUT */
 async function checkAuth() {
   const { data: { session } } = await client.auth.getSession();
   if (!session) {
-    // If you want to force login, uncomment the line below:
     // window.location.href = "index.html";
-    console.warn("User not logged in");
-    // For now, we load data anyway for testing
-    loadData();
-  } else {
-    loadData();
+    console.warn("Not logged in");
   }
 }
 
@@ -162,11 +154,8 @@ async function logout() {
   window.location.href = "index.html";
 }
 
-// Start the app
 checkAuth();
 </script>
 
 </body>
 </html>
-
-
