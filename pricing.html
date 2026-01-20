@@ -4,158 +4,142 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pricing Inquiry</title>
-
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
-:root {
-  --corp-green:#007941;
-  --corp-light:#10b981;
-  --glass-bg:rgba(255,255,255,0.08);
-  --glass-border:rgba(255,255,255,0.2);
-}
-body{
-  margin:0;overflow:hidden;
-  background:radial-gradient(circle,#064e3b,#022c22);
-  font-family:system-ui;
-  display:flex;justify-content:center;align-items:center;
-  min-height:100vh;
-}
-.glass-card{
-  width:95%;max-width:900px;
-  background:var(--glass-bg);
-  backdrop-filter:blur(20px);
-  border:1px solid var(--glass-border);
-  border-radius:2.5rem;
-  padding:2rem;
-  box-shadow:0 25px 50px -12px rgba(0,0,0,.5);
-}
-input{
-  background:rgba(0,0,0,.25)!important;
-  border:1px solid rgba(255,255,255,.1)!important;
-  color:white!important;
-}
-input:focus{
-  border-color:var(--corp-light)!important;
-  box-shadow:0 0 10px rgba(16,185,129,.4)!important;
-}
+:root { --corp-green:#007941; --corp-light:#10b981; --glass-bg:rgba(255,255,255,0.08); --glass-border:rgba(255,255,255,0.2); }
+body{ margin:0;overflow:hidden; background:radial-gradient(circle,#064e3b,#022c22); font-family:system-ui; display:flex;justify-content:center;align-items:center; min-height:100vh; }
+.glass-card{ width:95%;max-width:900px; background:var(--glass-bg); backdrop-filter:blur(20px); border:1px solid var(--glass-border); border-radius:2.5rem; padding:2rem; box-shadow:0 25px 50px -12px rgba(0,0,0,.5); position: relative; overflow: hidden; }
+
+/* Loading Bar Animation */
+#loading-bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--corp-light); width: 0%; transition: width 0.3s ease; box-shadow: 0 0 10px var(--corp-light); }
+.searching #loading-bar { animation: loading-progress 2s infinite ease-in-out; }
+@keyframes loading-progress { 0% { width: 0%; left: 0; } 50% { width: 70%; left: 15%; } 100% { width: 0%; left: 100%; } }
+
+input{ background:rgba(0,0,0,.25)!important; border:1px solid rgba(255,255,255,.1)!important; color:white!important; transition: all 0.3s ease; }
+input:focus{ border-color:var(--corp-light)!important; box-shadow:0 0 15px rgba(16,185,129,0.4)!important; background: rgba(0,0,0,0.4)!important; }
+
+/* Role Badge Style */
+.badge { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
 </style>
 </head>
-
 <body>
 
-<div class="glass-card">
+<div class="glass-card" id="main-card">
+  <div id="loading-bar"></div>
 
-<div class="flex justify-between items-center mb-6">
-  <div class="flex items-center gap-3">
-    <img src="https://i.imgur.com/VbZKWAf.png" class="h-10">
-    <div>
-      <h2 class="text-white font-bold">Pricing Inquiry</h2>
-      <p class="text-emerald-400 text-[10px] uppercase tracking-widest">Hospital Database</p>
+  <div class="flex justify-between items-center mb-6">
+    <div class="flex items-center gap-3">
+      <img src="https://i.imgur.com/VbZKWAf.png" class="h-10">
+      <div>
+        <div class="flex items-center gap-2">
+            <h2 class="text-white font-bold">Pricing Inquiry</h2>
+            <span id="role-display" class="badge">Checking...</span>
+        </div>
+        <p class="text-emerald-400/60 text-[10px] uppercase tracking-widest">Hospital Database Access</p>
+      </div>
     </div>
+    <button onclick="logout()" class="text-xs bg-red-500/20 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl text-red-400 transition-all">Logout</button>
   </div>
-  <button onclick="logout()" class="text-xs bg-red-500/80 hover:bg-red-500 px-3 py-2 rounded-lg text-white">
-    Logout
-  </button>
-</div>
 
-<input id="search" placeholder="Search item code or description (e.g. Maternity or EEG)..."
-class="w-full px-4 py-3 rounded-xl mb-5 text-sm">
+  <div class="relative">
+      <input id="search" placeholder="Search item code or description (e.g. Maternity or EEG)..." class="w-full px-5 py-4 rounded-2xl mb-5 text-sm outline-none">
+  </div>
 
-<div class="overflow-auto max-h-[60vh]">
-<table class="w-full text-white text-sm">
-<thead>
-<tr class="text-emerald-400 border-b border-white/10 text-left">
-  <th class="py-2 px-2">Item Code</th>
-  <th class="px-2">Description</th>
-  <th class="px-2">Price</th>
-  <th class="px-2">Remarks</th>
-</tr>
-</thead>
-<tbody id="table-body">
-  <tr><td colspan="4" class="text-center py-10 text-gray-400 italic">Type to search the database...</td></tr>
-</tbody>
-</table>
-</div>
-
+  <div class="overflow-auto max-h-[55vh] pr-2 custom-scrollbar">
+    <table class="w-full text-white text-sm">
+      <thead>
+        <tr class="text-emerald-400 border-b border-white/10 text-left sticky top-0 bg-[#043b2d] z-10">
+          <th class="py-3 px-2">Item Code</th>
+          <th class="px-2">Description</th>
+          <th class="px-2">Price</th>
+          <th id="action-header" class="px-2 text-right">Remarks</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <tr><td colspan="4" class="text-center py-20 text-gray-500 italic tracking-wide">Enter search term to begin...</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-let supabaseClient;
+let client = window.supabase.createClient('https://yheciygtsimcduzeavlq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZWNpeWd0c2ltY2R1emVhdmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MDExMDgsImV4cCI6MjA4NDM3NzEwOH0.jfzpbDv4EX16D7_Ee_yWz2o3L_X7JWilKmefhjclguc');
+let userRole = 'staff';
 
-function initSupabase() {
-  if (!supabaseClient) {
-    supabaseClient = window.supabase.createClient(
-      'https://yheciygtsimcduzeavlq.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZWNpeWd0c2ltY2R1emVhdmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MDExMDgsImV4cCI6MjA4NDM3NzEwOH0.jfzpbDv4EX16D7_Ee_yWz2o3L_X7JWilKmefhjclguc'
-    );
+async function checkAuth() {
+  const { data: { session } } = await client.auth.getSession();
+  if (!session) { window.location.href = "index.html"; return; }
+  
+  userRole = session.user.user_metadata.role || 'staff';
+  const badge = document.getElementById('role-display');
+  badge.innerText = userRole;
+  
+  if (userRole === 'admin') {
+    badge.style.color = '#fff';
+    badge.style.background = '#10b981';
+    document.getElementById('action-header').innerText = "Modify";
   }
-  return supabaseClient;
 }
-
-const client = initSupabase();
 
 function render(rows) {
   const body = document.getElementById('table-body');
-  
+  document.getElementById('main-card').classList.remove('searching');
+
   if (!rows || rows.length === 0) {
-    body.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-gray-400">No matching items found</td></tr>';
+    body.innerHTML = '<tr><td colspan="4" class="text-center py-20 text-gray-400">No database matches found.</td></tr>';
     return;
   }
 
-  body.innerHTML = rows.map(r => `
-    <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
-      <td class="py-3 px-2 font-mono text-emerald-300">${r.item_code || '—'}</td>
-      <td class="px-2">${r.item_description || 'No Description'}</td>
-      <td class="px-2">₱${r.price ? Number(String(r.price).replace(/,/g, '')).toLocaleString(undefined, {minimumFractionDigits: 2}) : '0.00'}</td>
-      <td class="px-2 text-gray-400 text-[11px] leading-tight">${r.remarks || ''}</td>
-    </tr>
-  `).join('');
+  body.innerHTML = rows.map(r => {
+    let actions = `<span class="text-gray-500 text-[10px] italic">${r.remarks || '—'}</span>`;
+    
+    if (userRole === 'admin') {
+      actions = `<button onclick="editItem('${r.item_code}')" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-emerald-500 hover:text-white transition-all">EDIT</button>`;
+    }
+
+    return `
+      <tr class="border-b border-white/5 hover:bg-white/5 transition-colors group">
+        <td class="py-4 px-2 font-mono text-emerald-300 group-hover:text-emerald-100">${r.item_code || '—'}</td>
+        <td class="px-2 font-medium">${r.item_description || 'No Description'}</td>
+        <td class="px-2 text-emerald-50 font-semibold">₱${r.price ? Number(String(r.price).replace(/,/g, '')).toLocaleString(undefined, {minimumFractionDigits: 2}) : '0.00'}</td>
+        <td class="px-2 text-right">${actions}</td>
+      </tr>`;
+  }).join('');
 }
 
-/* SERVER-SIDE SEARCH FUNCTIONALITY */
 document.getElementById('search').addEventListener('input', async (e) => {
   const q = e.target.value.trim();
   const body = document.getElementById('table-body');
 
-  // If input is empty, clear the table
   if (q.length < 2) {
-    body.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-gray-400 italic">Type at least 2 characters to search...</td></tr>';
+    body.innerHTML = '<tr><td colspan="4" class="text-center py-20 text-gray-500 italic">Type at least 2 characters...</td></tr>';
     return;
   }
 
-  // Search directly on the Supabase server
-  const { data, error } = await client
-    .from('pricing_database')
+  // Start Animation
+  document.getElementById('main-card').classList.add('searching');
+
+  const { data, error } = await client.from('pricing_database')
     .select('*')
     .or(`item_code.ilike.%${q}%,item_description.ilike.%${q}%`)
-    .limit(50); // Shows top 50 matches for speed
+    .limit(50);
 
-  if (error) {
-    console.error("Search error:", error.message);
-    return;
-  }
-
-  render(data);
+  if (!error) render(data);
 });
 
-/* AUTH & LOGOUT */
-async function checkAuth() {
-  const { data: { session } } = await client.auth.getSession();
-  if (!session) {
-    // window.location.href = "index.html";
-    console.warn("Not logged in");
-  }
+async function editItem(code) {
+  const newPrice = prompt(`Update unit price for ${code}:`);
+  if (!newPrice) return;
+  
+  const { error } = await client.from('pricing_database').update({ price: newPrice.replace(/,/g, '') }).eq('item_code', code);
+  if (error) alert("Access Denied: " + error.message);
+  else alert("Price updated successfully.");
 }
 
-async function logout() {
-  await client.auth.signOut();
-  window.location.href = "index.html";
-}
+async function logout() { await client.auth.signOut(); window.location.href = "index.html"; }
 
 checkAuth();
 </script>
-
 </body>
 </html>
