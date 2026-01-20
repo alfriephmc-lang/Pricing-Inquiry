@@ -11,8 +11,8 @@
     :root { --corp-green:#007941; --corp-light:#10b981; --glass-bg:rgba(255,255,255,0.08); --glass-border:rgba(255,255,255,0.15); }
     body { margin:0; background:radial-gradient(circle,#064e3b,#022c22); font-family:system-ui; display:flex; min-height:100vh; overflow:hidden; }
 
-    /* Sidebar Styles */
-    #sidebar { width: 70px; height: 100vh; background: rgba(0,0,0,0.3); backdrop-filter: blur(15px); border-right: 1px solid var(--glass-border); transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: fixed; left: 0; top: 0; z-index: 50; overflow: hidden; display: flex; flex-direction: column; }
+    /* Sidebar Styles (Navigation Only) */
+    #sidebar { width: 70px; height: 100vh; background: rgba(0,0,0,0.3); backdrop-filter: blur(15px); border-right: 1px solid var(--glass-border); transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: fixed; left: 0; top: 0; z-index: 50; overflow: hidden; display: flex; flex-direction: column; padding-top: 2rem; }
     #sidebar:hover { width: 240px; }
     
     .nav-item { display: flex; align-items: center; padding: 1.25rem; color: #a7f3d0; text-decoration: none; transition: all 0.2s; white-space: nowrap; border-left: 3px solid transparent; }
@@ -22,9 +22,9 @@
     .nav-item:hover { background: rgba(16, 185, 129, 0.1); border-left-color: var(--corp-light); color: white; }
     .nav-item.active { background: rgba(16, 185, 129, 0.15); border-left-color: var(--corp-light); color: white; }
 
-    /* Main Content */
+    /* Main Content Area */
     .main-content { margin-left: 70px; flex: 1; display: flex; justify-content: center; align-items: center; padding: 2rem; width: calc(100% - 70px); }
-    .glass-card { width: 100%; max-width: 1200px; background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 2.5rem; padding: 2rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,.5); position: relative; }
+    .glass-card { width: 100%; max-width: 1200px; background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 2.5rem; padding: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,.5); position: relative; }
 
     #loading-bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--corp-light); width: 0%; transition: width 0.3s ease; box-shadow: 0 0 10px var(--corp-light); }
     .searching #loading-bar { animation: loading-progress 2s infinite ease-in-out; }
@@ -42,10 +42,6 @@
 <body>
 
 <nav id="sidebar">
-    <div class="p-5 mb-10">
-        <img src="https://i.imgur.com/VbZKWAf.png" class="h-8 mx-auto">
-    </div>
-    
     <a href="pricing.html" class="nav-item">
         <i class="fa-solid fa-tags"></i>
         <span>Price Inquiry</span>
@@ -72,32 +68,35 @@
   <div class="glass-card" id="main-card">
     <div id="loading-bar"></div>
 
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <div class="flex items-center gap-2">
-            <h2 class="text-white font-bold text-xl">Doctor's Directory</h2>
-            <span id="role-display" class="badge">Loading...</span>
+    <div class="flex justify-between items-start mb-8">
+      <div class="flex items-center gap-4">
+        <img src="https://i.imgur.com/VbZKWAf.png" class="h-12">
+        <div>
+          <div class="flex items-center gap-2">
+              <h2 class="text-white font-bold text-2xl tracking-tight">Doctor's Directory</h2>
+              <span id="role-display" class="badge">Loading...</span>
+          </div>
+          <p class="text-emerald-400/60 text-[10px] uppercase tracking-[0.2em] font-semibold">HMO Masterfile & Accreditation</p>
         </div>
-        <p class="text-emerald-400/60 text-[10px] uppercase tracking-widest">HMO Masterfile & Accreditation</p>
       </div>
     </div>
 
-    <input id="search" placeholder="Search Doctor's Name, Specialization, or HMO (e.g. Intellicare)..." class="w-full px-5 py-4 rounded-2xl mb-5 text-sm outline-none ring-offset-transparent focus:ring-2 focus:ring-emerald-500 transition-all">
+    <input id="search" placeholder="Search Doctor's Name, Specialization, or HMO (e.g. Maxicare)..." class="w-full px-6 py-4 rounded-2xl mb-6 text-sm outline-none ring-offset-transparent focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-inner">
 
-    <div class="overflow-auto max-h-[60vh] pr-2 custom-scrollbar">
+    <div class="overflow-auto max-h-[55vh] pr-2 custom-scrollbar">
       <table class="w-full text-white text-[13px]">
         <thead>
           <tr class="text-emerald-400 border-b border-white/10 text-left sticky top-0 bg-[#043b2d] z-10">
-            <th class="py-3 px-2">Doctor's Name</th>
-            <th class="px-2">Specialization</th>
-            <th class="px-2">Schedule</th>
-            <th class="px-2">Rm/Sec/Loc</th>
-            <th class="px-2">Accreditation</th>
-            <th id="action-header" class="px-2 text-right">Action</th>
+            <th class="py-4 px-2 font-bold uppercase text-[11px] tracking-wider">Doctor's Name</th>
+            <th class="px-2 font-bold uppercase text-[11px] tracking-wider">Specialization</th>
+            <th class="px-2 font-bold uppercase text-[11px] tracking-wider">Schedule</th>
+            <th class="px-2 font-bold uppercase text-[11px] tracking-wider">Rm/Sec/Loc</th>
+            <th class="px-2 font-bold uppercase text-[11px] tracking-wider">Accreditation</th>
+            <th id="action-header" class="px-2 text-right font-bold uppercase text-[11px] tracking-wider">Action</th>
           </tr>
         </thead>
         <tbody id="table-body">
-          <tr><td colspan="6" class="text-center py-20 text-gray-500 italic">Enter search term to begin...</td></tr>
+          <tr><td colspan="6" class="text-center py-20 text-gray-500 italic font-light">Enter search term to view medical staff...</td></tr>
         </tbody>
       </table>
     </div>
@@ -128,7 +127,7 @@ function render(rows) {
     return;
   }
   body.innerHTML = rows.map(r => {
-    const hmos = r.accreditation ? r.accreditation.split(',').map(h => `<span class="hmo-tag">${h.trim()}</span>`).join('') : '<span class="text-gray-600">None</span>';
+    const hmos = r.accreditation ? r.accreditation.split(',').map(h => `<span class="hmo-tag">${h.trim()}</span>`).join('') : '<span class="text-gray-600 italic">None</span>';
     
     return `
     <tr class="border-b border-white/5 hover:bg-white/5 transition-colors group">
@@ -172,6 +171,13 @@ async function editDoctor(id, name, oldSched, oldAccred) {
     
   if (error) alert("Update failed: " + error.message); 
   else { alert("Doctor record updated!"); location.reload(); }
+}
+
+async function openPasswordModal() {
+  const newPassword = prompt("Enter new password (min 6 chars):");
+  if (!newPassword || newPassword.length < 6) return;
+  const { error } = await client.auth.updateUser({ password: newPassword });
+  if (error) alert(error.message); else alert("Password updated successfully!");
 }
 
 async function logout() { await client.auth.signOut(); window.location.href = "index.html"; }
