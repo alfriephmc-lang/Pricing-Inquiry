@@ -21,6 +21,10 @@ input:focus{ border-color:var(--corp-light)!important; box-shadow:0 0 15px rgba(
 
 .badge { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
 .badge-admin { background: #10b981 !important; color: white !important; }
+
+/* Scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 </style>
 </head>
 <body>
@@ -44,7 +48,7 @@ input:focus{ border-color:var(--corp-light)!important; box-shadow:0 0 15px rgba(
 
   <input id="search" placeholder="Search item code or description..." class="w-full px-5 py-4 rounded-2xl mb-5 text-sm outline-none">
 
-  <div class="overflow-auto max-h-[55vh] pr-2">
+  <div class="overflow-auto max-h-[55vh] pr-2 custom-scrollbar">
     <table class="w-full text-white text-sm">
       <thead>
         <tr class="text-emerald-400 border-b border-white/10 text-left sticky top-0 bg-[#043b2d] z-10">
@@ -62,6 +66,7 @@ input:focus{ border-color:var(--corp-light)!important; box-shadow:0 0 15px rgba(
 </div>
 
 <script>
+// INITIALIZE SUPABASE
 const client = window.supabase.createClient('https://yheciygtsimcduzeavlq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZWNpeWd0c2ltY2R1emVhdmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MDExMDgsImV4cCI6MjA4NDM3NzEwOH0.jfzpbDv4EX16D7_Ee_yWz2o3L_X7JWilKmefhjclguc');
 let userRole = 'staff'; 
 
@@ -69,26 +74,32 @@ async function checkAuth() {
   const { data: { session } } = await client.auth.getSession();
   if (!session) { window.location.href = "index.html"; return; }
   
-  // FETCH ROLE FROM YOUR DATABASE TABLE
+  const badge = document.getElementById('role-display');
+
+  // FETCH ROLE FROM YOUR USERS TABLE
   const { data: userData, error } = await client
-    .from('users') // Your custom table
+    .from('users') 
     .select('role')
-    .eq('email', session.user.email)
+    .eq('email', session.user.email.trim())
     .single();
 
-  if (!error && userData) {
-    userRole = userData.role.toLowerCase();
-  } else {
-    console.error("Error fetching role, defaulting to staff:", error);
-    userRole = 'staff';
+  if (error) {
+    console.error("Database Error:", error.message);
+    userRole = 'staff'; 
+  } else if (userData && userData.role) {
+    userRole = userData.role.trim().toLowerCase();
+    console.log("Success! Role in DB is:", userRole);
   }
 
-  const badge = document.getElementById('role-display');
-  badge.innerText = userRole;
-  
+  // UPDATE THE UI BASED ON ROLE
   if (userRole === 'admin') {
+    badge.innerText = "ADMIN";
     badge.classList.add('badge-admin');
     document.getElementById('action-header').innerText = "Modify";
+  } else {
+    badge.innerText = "STAFF";
+    badge.classList.remove('badge-admin');
+    document.getElementById('action-header').innerText = "Remarks";
   }
 }
 
@@ -103,9 +114,12 @@ function render(rows) {
 
   body.innerHTML = rows.map(r => {
     let actions = `<span class="text-gray-500 text-[10px] italic">${r.remarks || '—'}</span>`;
+    
+    // Only show the EDIT button if the user is an Admin
     if (userRole === 'admin') {
       actions = `<button onclick="editItem('${r.item_code}')" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-emerald-500 hover:text-white transition-all">EDIT</button>`;
     }
+
     return `<tr class="border-b border-white/5 hover:bg-white/5 transition-colors group">
         <td class="py-4 px-2 font-mono text-emerald-300 group-hover:text-emerald-100">${r.item_code || '—'}</td>
         <td class="px-2 font-medium">${r.item_description || 'No Description'}</td>
@@ -118,21 +132,37 @@ function render(rows) {
 document.getElementById('search').addEventListener('input', async (e) => {
   const q = e.target.value.trim();
   if (q.length < 2) return;
+  
   document.getElementById('main-card').classList.add('searching');
-  const { data, error } = await client.from('pricing_database').select('*').or(`item_code.ilike.%${q}%,item_description.ilike.%${q}%`).limit(50);
+  
+  const { data, error } = await client
+    .from('pricing_database')
+    .select('*')
+    .or(`item_code.ilike.%${q}%,item_description.ilike.%${q}%`)
+    .limit(50);
+    
   if (!error) render(data);
 });
 
 async function editItem(code) {
   const newPrice = prompt(`Update unit price for ${code}:`);
   if (!newPrice) return;
-  const { error } = await client.from('pricing_database').update({ price: newPrice.replace(/,/g, '') }).eq('item_code', code);
-  if (error) alert("Access Denied: " + error.message);
+  
+  const { error } = await client
+    .from('pricing_database')
+    .update({ price: newPrice.replace(/,/g, '') })
+    .eq('item_code', code);
+    
+  if (error) alert("Update failed: " + error.message);
   else alert("Price updated successfully.");
 }
 
-async function logout() { await client.auth.signOut(); window.location.href = "index.html"; }
+async function logout() { 
+  await client.auth.signOut(); 
+  window.location.href = "index.html"; 
+}
 
+// RUN AUTH CHECK ON LOAD
 checkAuth();
 </script>
 </body>
