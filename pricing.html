@@ -19,8 +19,8 @@ body{ margin:0;overflow:hidden; background:radial-gradient(circle,#064e3b,#022c2
 input{ background:rgba(0,0,0,.25)!important; border:1px solid rgba(255,255,255,.1)!important; color:white!important; transition: all 0.3s ease; }
 input:focus{ border-color:var(--corp-light)!important; box-shadow:0 0 15px rgba(16,185,129,0.4)!important; background: rgba(0,0,0,0.4)!important; }
 
-/* Role Badge Style */
 .badge { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+.badge-admin { background: #10b981 !important; color: white !important; }
 </style>
 </head>
 <body>
@@ -34,7 +34,7 @@ input:focus{ border-color:var(--corp-light)!important; box-shadow:0 0 15px rgba(
       <div>
         <div class="flex items-center gap-2">
             <h2 class="text-white font-bold">Pricing Inquiry</h2>
-            <span id="role-display" class="badge">Checking...</span>
+            <span id="role-display" class="badge">Loading Role...</span>
         </div>
         <p class="text-emerald-400/60 text-[10px] uppercase tracking-widest">Hospital Database Access</p>
       </div>
@@ -42,11 +42,9 @@ input:focus{ border-color:var(--corp-light)!important; box-shadow:0 0 15px rgba(
     <button onclick="logout()" class="text-xs bg-red-500/20 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl text-red-400 transition-all">Logout</button>
   </div>
 
-  <div class="relative">
-      <input id="search" placeholder="Search item code or description (e.g. Maternity or EEG)..." class="w-full px-5 py-4 rounded-2xl mb-5 text-sm outline-none">
-  </div>
+  <input id="search" placeholder="Search item code or description..." class="w-full px-5 py-4 rounded-2xl mb-5 text-sm outline-none">
 
-  <div class="overflow-auto max-h-[55vh] pr-2 custom-scrollbar">
+  <div class="overflow-auto max-h-[55vh] pr-2">
     <table class="w-full text-white text-sm">
       <thead>
         <tr class="text-emerald-400 border-b border-white/10 text-left sticky top-0 bg-[#043b2d] z-10">
@@ -57,27 +55,39 @@ input:focus{ border-color:var(--corp-light)!important; box-shadow:0 0 15px rgba(
         </tr>
       </thead>
       <tbody id="table-body">
-        <tr><td colspan="4" class="text-center py-20 text-gray-500 italic tracking-wide">Enter search term to begin...</td></tr>
+        <tr><td colspan="4" class="text-center py-20 text-gray-500 italic">Enter search term to begin...</td></tr>
       </tbody>
     </table>
   </div>
 </div>
 
 <script>
-let client = window.supabase.createClient('https://yheciygtsimcduzeavlq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZWNpeWd0c2ltY2R1emVhdmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MDExMDgsImV4cCI6MjA4NDM3NzEwOH0.jfzpbDv4EX16D7_Ee_yWz2o3L_X7JWilKmefhjclguc');
-let userRole = 'staff';
+const client = window.supabase.createClient('https://yheciygtsimcduzeavlq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZWNpeWd0c2ltY2R1emVhdmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MDExMDgsImV4cCI6MjA4NDM3NzEwOH0.jfzpbDv4EX16D7_Ee_yWz2o3L_X7JWilKmefhjclguc');
+let userRole = 'staff'; 
 
 async function checkAuth() {
   const { data: { session } } = await client.auth.getSession();
   if (!session) { window.location.href = "index.html"; return; }
   
-  userRole = session.user.user_metadata.role || 'staff';
+  // FETCH ROLE FROM YOUR DATABASE TABLE
+  const { data: userData, error } = await client
+    .from('users') // Your custom table
+    .select('role')
+    .eq('email', session.user.email)
+    .single();
+
+  if (!error && userData) {
+    userRole = userData.role.toLowerCase();
+  } else {
+    console.error("Error fetching role, defaulting to staff:", error);
+    userRole = 'staff';
+  }
+
   const badge = document.getElementById('role-display');
   badge.innerText = userRole;
   
   if (userRole === 'admin') {
-    badge.style.color = '#fff';
-    badge.style.background = '#10b981';
+    badge.classList.add('badge-admin');
     document.getElementById('action-header').innerText = "Modify";
   }
 }
@@ -93,13 +103,10 @@ function render(rows) {
 
   body.innerHTML = rows.map(r => {
     let actions = `<span class="text-gray-500 text-[10px] italic">${r.remarks || '—'}</span>`;
-    
     if (userRole === 'admin') {
       actions = `<button onclick="editItem('${r.item_code}')" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-emerald-500 hover:text-white transition-all">EDIT</button>`;
     }
-
-    return `
-      <tr class="border-b border-white/5 hover:bg-white/5 transition-colors group">
+    return `<tr class="border-b border-white/5 hover:bg-white/5 transition-colors group">
         <td class="py-4 px-2 font-mono text-emerald-300 group-hover:text-emerald-100">${r.item_code || '—'}</td>
         <td class="px-2 font-medium">${r.item_description || 'No Description'}</td>
         <td class="px-2 text-emerald-50 font-semibold">₱${r.price ? Number(String(r.price).replace(/,/g, '')).toLocaleString(undefined, {minimumFractionDigits: 2}) : '0.00'}</td>
@@ -110,28 +117,15 @@ function render(rows) {
 
 document.getElementById('search').addEventListener('input', async (e) => {
   const q = e.target.value.trim();
-  const body = document.getElementById('table-body');
-
-  if (q.length < 2) {
-    body.innerHTML = '<tr><td colspan="4" class="text-center py-20 text-gray-500 italic">Type at least 2 characters...</td></tr>';
-    return;
-  }
-
-  // Start Animation
+  if (q.length < 2) return;
   document.getElementById('main-card').classList.add('searching');
-
-  const { data, error } = await client.from('pricing_database')
-    .select('*')
-    .or(`item_code.ilike.%${q}%,item_description.ilike.%${q}%`)
-    .limit(50);
-
+  const { data, error } = await client.from('pricing_database').select('*').or(`item_code.ilike.%${q}%,item_description.ilike.%${q}%`).limit(50);
   if (!error) render(data);
 });
 
 async function editItem(code) {
   const newPrice = prompt(`Update unit price for ${code}:`);
   if (!newPrice) return;
-  
   const { error } = await client.from('pricing_database').update({ price: newPrice.replace(/,/g, '') }).eq('item_code', code);
   if (error) alert("Access Denied: " + error.message);
   else alert("Price updated successfully.");
