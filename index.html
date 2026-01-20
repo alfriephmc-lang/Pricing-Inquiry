@@ -82,6 +82,7 @@
 <canvas id="bg-canvas"></canvas>
 
 <div class="glass-card">
+
   <div class="flex justify-center mb-6">
     <img src="https://i.imgur.com/VbZKWAf.png" class="h-16" />
   </div>
@@ -94,6 +95,7 @@
   </div>
 
   <form id="login-form" class="space-y-5">
+
     <div>
       <label class="block text-[9px] font-bold text-emerald-500 uppercase mb-2">Identifier</label>
       <input id="email" type="email" required placeholder="email@hospital.com"
@@ -120,10 +122,12 @@
       System Online
     </span>
   </div>
+
 </div>
 
 <div class="attribution-info">Created by: <strong>Projectvibe</strong></div>
 
+<!-- BACKGROUND ANIMATION -->
 <script>
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
@@ -201,37 +205,37 @@ window.addEventListener('resize',resize);
 resize(); animate();
 </script>
 
+<!-- LOGIN SCRIPT -->
 <script>
-// IMPORTANT: Use the correct Client Keys here
-const SUPABASE_URL = 'https://yheciygtsimcduzeavlq.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_4SRJECxF1Sr9jc7GwB5vYQ_cZut4BWG';
+document.addEventListener("DOMContentLoaded", async () => {
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabase = window.supabase.createClient(
+    'https://yheciygtsimcduzeavlq.supabase.co',
+    'sb_publishable_4SRJECxF1Sr9jc7GwB5vYQ_cZut4BWG'
+  );
 
-document.getElementById('login-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const emailInput = document.getElementById('email');
-  const passwordInput = document.getElementById('password');
+  const form = document.getElementById('login-form');
   const errorBox = document.getElementById('error');
-  
-  errorBox.classList.add('hidden');
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: emailInput.value,
-    password: passwordInput.value
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.classList.add('hidden');
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.value,
+      password: password.value
+    });
+
+    if (error) {
+      errorBox.textContent = error.message;
+      errorBox.classList.remove('hidden');
+    } else {
+      window.location.href = "pricing.html";
+    }
   });
 
-  if (error) {
-    errorBox.textContent = error.message;
-    errorBox.classList.remove('hidden');
-  } else {
-    // Check if redirect works
-    console.log("Login successful", data);
-    window.location.href = "pricing.html";
-  }
 });
 </script>
 
 </body>
 </html>
-
