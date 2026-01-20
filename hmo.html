@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doctor's Directory | HMO Masterfile</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    :root { --corp-green:#007941; --corp-light:#10b981; --glass-bg:rgba(255,255,255,0.08); --glass-border:rgba(255,255,255,0.15); }
+    body { margin:0; background:radial-gradient(circle,#064e3b,#022c22); font-family:system-ui; display:flex; min-height:100vh; overflow:hidden; }
+
+    /* Sidebar Styles */
+    #sidebar { width: 70px; height: 100vh; background: rgba(0,0,0,0.3); backdrop-filter: blur(15px); border-right: 1px solid var(--glass-border); transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: fixed; left: 0; top: 0; z-index: 50; overflow: hidden; display: flex; flex-direction: column; }
+    #sidebar:hover { width: 240px; }
+    
+    .nav-item { display: flex; align-items: center; padding: 1.25rem; color: #a7f3d0; text-decoration: none; transition: all 0.2s; white-space: nowrap; border-left: 3px solid transparent; }
+    .nav-item i { min-width: 30px; font-size: 1.25rem; text-align: center; margin-right: 20px; }
+    .nav-item span { opacity: 0; transition: opacity 0.2s; font-weight: 500; }
+    #sidebar:hover .nav-item span { opacity: 1; }
+    .nav-item:hover { background: rgba(16, 185, 129, 0.1); border-left-color: var(--corp-light); color: white; }
+    .nav-item.active { background: rgba(16, 185, 129, 0.15); border-left-color: var(--corp-light); color: white; }
+
+    /* Main Content */
+    .main-content { margin-left: 70px; flex: 1; display: flex; justify-content: center; align-items: center; padding: 2rem; width: calc(100% - 70px); }
+    .glass-card { width: 100%; max-width: 1200px; background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 2.5rem; padding: 2rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,.5); position: relative; }
+
+    #loading-bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--corp-light); width: 0%; transition: width 0.3s ease; box-shadow: 0 0 10px var(--corp-light); }
+    .searching #loading-bar { animation: loading-progress 2s infinite ease-in-out; }
+    @keyframes loading-progress { 0% { width: 0%; left: 0; } 50% { width: 70%; left: 15%; } 100% { width: 0%; left: 100%; } }
+
+    input { background:rgba(0,0,0,.25)!important; border:1px solid rgba(255,255,255,.1)!important; color:white!important; }
+    .badge { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+    .badge-admin { background: #10b981 !important; color: white !important; }
+    
+    .hmo-tag { display: inline-block; background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; margin: 2px; font-size: 10px; color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+    <div class="p-5 mb-10">
+        <img src="https://i.imgur.com/VbZKWAf.png" class="h-8 mx-auto">
+    </div>
+    
+    <a href="pricing.html" class="nav-item">
+        <i class="fa-solid fa-tags"></i>
+        <span>Price Inquiry</span>
+    </a>
+    
+    <a href="hmo.html" class="nav-item active">
+        <i class="fa-solid fa-user-doctor"></i>
+        <span>Doctor's Directory</span>
+    </a>
+
+    <div class="mt-auto mb-5">
+        <a href="javascript:void(0)" onclick="openPasswordModal()" class="nav-item">
+            <i class="fa-solid fa-key"></i>
+            <span>Security</span>
+        </a>
+        <a href="javascript:void(0)" onclick="logout()" class="nav-item text-red-400">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</nav>
+
+<div class="main-content">
+  <div class="glass-card" id="main-card">
+    <div id="loading-bar"></div>
+
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <div class="flex items-center gap-2">
+            <h2 class="text-white font-bold text-xl">Doctor's Directory</h2>
+            <span id="role-display" class="badge">Loading...</span>
+        </div>
+        <p class="text-emerald-400/60 text-[10px] uppercase tracking-widest">HMO Masterfile & Accreditation</p>
+      </div>
+    </div>
+
+    <input id="search" placeholder="Search Doctor's Name, Specialization, or HMO (e.g. Intellicare)..." class="w-full px-5 py-4 rounded-2xl mb-5 text-sm outline-none ring-offset-transparent focus:ring-2 focus:ring-emerald-500 transition-all">
+
+    <div class="overflow-auto max-h-[60vh] pr-2 custom-scrollbar">
+      <table class="w-full text-white text-[13px]">
+        <thead>
+          <tr class="text-emerald-400 border-b border-white/10 text-left sticky top-0 bg-[#043b2d] z-10">
+            <th class="py-3 px-2">Doctor's Name</th>
+            <th class="px-2">Specialization</th>
+            <th class="px-2">Schedule</th>
+            <th class="px-2">Rm/Sec/Loc</th>
+            <th class="px-2">Accreditation</th>
+            <th id="action-header" class="px-2 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="6" class="text-center py-20 text-gray-500 italic">Enter search term to begin...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const client = window.supabase.createClient('https://yheciygtsimcduzeavlq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZWNpeWd0c2ltY2R1emVhdmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MDExMDgsImV4cCI6MjA4NDM3NzEwOH0.jfzpbDv4EX16D7_Ee_yWz2o3L_X7JWilKmefhjclguc');
+let userRole = 'staff'; 
+
+async function checkAuth() {
+  const { data: { session } } = await client.auth.getSession();
+  if (!session) { window.location.href = "index.html"; return; }
+  
+  const { data: userData } = await client.from('users').select('role').eq('email', session.user.email.trim()).single();
+  userRole = userData?.role?.toLowerCase() || 'staff';
+
+  const badge = document.getElementById('role-display');
+  badge.innerText = userRole;
+  if (userRole === 'admin') badge.classList.add('badge-admin');
+}
+
+function render(rows) {
+  const body = document.getElementById('table-body');
+  document.getElementById('main-card').classList.remove('searching');
+  if (!rows || rows.length === 0) {
+    body.innerHTML = '<tr><td colspan="6" class="text-center py-20 text-gray-400">No records found.</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(r => {
+    const hmos = r.accreditation ? r.accreditation.split(',').map(h => `<span class="hmo-tag">${h.trim()}</span>`).join('') : '<span class="text-gray-600">None</span>';
+    
+    return `
+    <tr class="border-b border-white/5 hover:bg-white/5 transition-colors group">
+      <td class="py-4 px-2 font-bold text-emerald-300 uppercase">${r.doctors_name || '—'}</td>
+      <td class="px-2 font-medium">${r.specialization || '—'}</td>
+      <td class="px-2 text-gray-300 text-xs">${r.clinic_schedule || '—'}</td>
+      <td class="px-2 text-gray-400 font-mono text-xs">${r.rm || '-'}/${r.sec || '-'}/${r.loc || '-'}</td>
+      <td class="px-2 py-2 w-1/4">${hmos}</td>
+      <td class="px-2 text-right">
+        ${userRole === 'admin' ? `<button onclick="editDoctor('${r.id}', '${r.doctors_name}', '${r.clinic_schedule}', '${r.accreditation}')" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-emerald-500 hover:text-white transition-all">EDIT</button>` : `<span class="text-[10px] text-gray-600">View Only</span>`}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('search').addEventListener('input', async (e) => {
+  const q = e.target.value.trim();
+  if (q.length < 2) return;
+  document.getElementById('main-card').classList.add('searching');
+  
+  const { data, error } = await client
+    .from('hmo_masterfile')
+    .select('*')
+    .or(`doctors_name.ilike.%${q}%,specialization.ilike.%${q}%,accreditation.ilike.%${q}%`)
+    .limit(100);
+    
+  if (!error) render(data);
+});
+
+async function editDoctor(id, name, oldSched, oldAccred) {
+  const newSched = prompt(`Update Clinic Schedule for ${name}:`, oldSched) || oldSched;
+  const newAccred = prompt(`Update HMO Accreditations (comma separated):`, oldAccred) || oldAccred;
+
+  const { error } = await client
+    .from('hmo_masterfile')
+    .update({ 
+      clinic_schedule: newSched, 
+      accreditation: newAccred 
+    })
+    .eq('id', id);
+    
+  if (error) alert("Update failed: " + error.message); 
+  else { alert("Doctor record updated!"); location.reload(); }
+}
+
+async function logout() { await client.auth.signOut(); window.location.href = "index.html"; }
+checkAuth();
+</script>
+</body>
+</html>
