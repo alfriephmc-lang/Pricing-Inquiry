@@ -3,63 +3,101 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pricing Inquiry | Admin Portal</title>
+<title>Pricing Inquiry</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-:root { --corp-green:#007941; --corp-light:#10b981; --glass-bg:rgba(255,255,255,0.08); --glass-border:rgba(255,255,255,0.2); }
-body{ margin:0;overflow:hidden; background:radial-gradient(circle,#064e3b,#022c22); font-family:system-ui; display:flex;justify-content:center;align-items:center; min-height:100vh; }
-.glass-card{ width:95%;max-width:900px; background:var(--glass-bg); backdrop-filter:blur(20px); border:1px solid var(--glass-border); border-radius:2.5rem; padding:2rem; box-shadow:0 25px 50px -12px rgba(0,0,0,.5); position: relative; overflow: hidden; }
+    :root { --corp-green:#007941; --corp-light:#10b981; --glass-bg:rgba(255,255,255,0.08); --glass-border:rgba(255,255,255,0.15); }
+    body { margin:0; background:radial-gradient(circle,#064e3b,#022c22); font-family:system-ui; display:flex; min-height:100vh; overflow:hidden; }
 
-#loading-bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--corp-light); width: 0%; transition: width 0.3s ease; box-shadow: 0 0 10px var(--corp-light); }
-.searching #loading-bar { animation: loading-progress 2s infinite ease-in-out; }
-@keyframes loading-progress { 0% { width: 0%; left: 0; } 50% { width: 70%; left: 15%; } 100% { width: 0%; left: 100%; } }
+    /* Sidebar Styles */
+    #sidebar { width: 70px; height: 100vh; background: rgba(0,0,0,0.3); backdrop-filter: blur(15px); border-right: 1px solid var(--glass-border); transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: fixed; left: 0; top: 0; z-index: 50; overflow: hidden; display: flex; flex-direction: column; }
+    #sidebar:hover { width: 240px; }
+    
+    .nav-item { display: flex; align-items: center; padding: 1.25rem; color: #a7f3d0; text-decoration: none; transition: all 0.2s; white-space: nowrap; border-left: 3px solid transparent; }
+    .nav-item i { min-width: 30px; font-size: 1.25rem; text-align: center; margin-right: 20px; }
+    .nav-item span { opacity: 0; transition: opacity 0.2s; font-weight: 500; }
+    #sidebar:hover .nav-item span { opacity: 1; }
+    .nav-item:hover { background: rgba(16, 185, 129, 0.1); border-left-color: var(--corp-light); color: white; }
+    .nav-item.active { background: rgba(16, 185, 129, 0.15); border-left-color: var(--corp-light); color: white; }
 
-input{ background:rgba(0,0,0,.25)!important; border:1px solid rgba(255,255,255,.1)!important; color:white!important; transition: all 0.3s ease; }
-input:focus{ border-color:var(--corp-light)!important; box-shadow:0 0 15px rgba(16,185,129,0.4)!important; background: rgba(0,0,0,0.4)!important; }
+    /* Main Content */
+    .main-content { margin-left: 70px; flex: 1; display: flex; justify-content: center; align-items: center; padding: 2rem; width: calc(100% - 70px); }
+    .glass-card { width: 100%; max-width: 1000px; background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 2.5rem; padding: 2rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,.5); position: relative; }
 
-.badge { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
-.badge-admin { background: #10b981 !important; color: white !important; }
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    #loading-bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--corp-light); width: 0%; transition: width 0.3s ease; box-shadow: 0 0 10px var(--corp-light); }
+    .searching #loading-bar { animation: loading-progress 2s infinite ease-in-out; }
+    @keyframes loading-progress { 0% { width: 0%; left: 0; } 50% { width: 70%; left: 15%; } 100% { width: 0%; left: 100%; } }
+
+    input { background:rgba(0,0,0,.25)!important; border:1px solid rgba(255,255,255,.1)!important; color:white!important; }
+    .badge { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+    .badge-admin { background: #10b981 !important; color: white !important; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 </style>
 </head>
 <body>
 
-<div class="glass-card" id="main-card">
-  <div id="loading-bar"></div>
+<nav id="sidebar">
+    <div class="p-5 mb-10">
+        <img src="https://i.imgur.com/VbZKWAf.png" class="h-8 mx-auto">
+    </div>
+    
+    <a href="pricing.html" class="nav-item active">
+        <i class="fa-solid fa-tags"></i>
+        <span>Price Inquiry</span>
+    </a>
+    
+    <a href="hmo.html" class="nav-item">
+        <i class="fa-solid fa-user-doctor"></i>
+        <span>Doctor's Directory</span>
+    </a>
 
-  <div class="flex justify-between items-center mb-6">
-    <div class="flex items-center gap-3">
-      <img src="https://i.imgur.com/VbZKWAf.png" class="h-10">
+    <div class="mt-auto mb-5">
+        <a href="javascript:void(0)" onclick="openPasswordModal()" class="nav-item">
+            <i class="fa-solid fa-key"></i>
+            <span>Security</span>
+        </a>
+        <a href="javascript:void(0)" onclick="logout()" class="nav-item text-red-400">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</nav>
+
+<div class="main-content">
+  <div class="glass-card" id="main-card">
+    <div id="loading-bar"></div>
+
+    <div class="flex justify-between items-center mb-6">
       <div>
         <div class="flex items-center gap-2">
-            <h2 class="text-white font-bold">Pricing Inquiry</h2>
+            <h2 class="text-white font-bold text-xl">Pricing Inquiry</h2>
             <span id="role-display" class="badge">Loading...</span>
         </div>
-        <p class="text-emerald-400/60 text-[10px] uppercase tracking-widest">Hospital Database Access</p>
+        <p class="text-emerald-400/60 text-[10px] uppercase tracking-widest">Hospital Inventory System</p>
       </div>
     </div>
-    <button onclick="logout()" class="text-xs bg-red-500/20 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl text-red-400 transition-all">Logout</button>
-  </div>
 
-  <input id="search" placeholder="Search item code or description..." class="w-full px-5 py-4 rounded-2xl mb-5 text-sm outline-none">
+    <input id="search" placeholder="Search item code or description..." class="w-full px-5 py-4 rounded-2xl mb-5 text-sm outline-none ring-offset-transparent focus:ring-2 focus:ring-emerald-500 transition-all">
 
-  <div class="overflow-auto max-h-[55vh] pr-2 custom-scrollbar">
-    <table class="w-full text-white text-sm">
-      <thead>
-        <tr class="text-emerald-400 border-b border-white/10 text-left sticky top-0 bg-[#043b2d] z-10">
-          <th class="py-3 px-2">Item Code</th>
-          <th class="px-2">Description</th>
-          <th class="px-2">Price</th>
-          <th class="px-2">Remarks</th>
-          <th id="action-header" class="px-2 text-right">Action</th>
-        </tr>
-      </thead>
-      <tbody id="table-body">
-        <tr><td colspan="5" class="text-center py-20 text-gray-500 italic">Enter search term to begin...</td></tr>
-      </tbody>
-    </table>
+    <div class="overflow-auto max-h-[60vh] pr-2 custom-scrollbar">
+      <table class="w-full text-white text-sm">
+        <thead>
+          <tr class="text-emerald-400 border-b border-white/10 text-left sticky top-0 bg-[#043b2d] z-10">
+            <th class="py-3 px-2">Item Code</th>
+            <th class="px-2">Description</th>
+            <th class="px-2">Price</th>
+            <th class="px-2">Remarks</th>
+            <th id="action-header" class="px-2 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="5" class="text-center py-20 text-gray-500 italic">Enter search term to begin...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -82,12 +120,10 @@ async function checkAuth() {
 function render(rows) {
   const body = document.getElementById('table-body');
   document.getElementById('main-card').classList.remove('searching');
-
   if (!rows || rows.length === 0) {
     body.innerHTML = '<tr><td colspan="5" class="text-center py-20 text-gray-400">No database matches found.</td></tr>';
     return;
   }
-
   body.innerHTML = rows.map(r => `
     <tr class="border-b border-white/5 hover:bg-white/5 transition-colors group">
       <td class="py-4 px-2 font-mono text-emerald-300">${r.item_code || '—'}</td>
@@ -95,9 +131,7 @@ function render(rows) {
       <td class="px-2 text-emerald-50 font-semibold">₱${r.price ? Number(String(r.price).replace(/,/g, '')).toLocaleString(undefined, {minimumFractionDigits: 2}) : '0.00'}</td>
       <td class="px-2 text-gray-400 text-xs italic">${r.remarks || '—'}</td>
       <td class="px-2 text-right">
-        ${userRole === 'admin' ? 
-          `<button onclick="editItem('${r.item_code}', '${r.item_description}', '${r.price}', '${r.remarks}')" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-emerald-500 hover:text-white transition-all">EDIT</button>` : 
-          `<span class="text-[10px] text-gray-600">View Only</span>`}
+        ${userRole === 'admin' ? `<button onclick="editItem('${r.item_code}', '${r.item_description}', '${r.price}', '${r.remarks}')" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-emerald-500 hover:text-white transition-all">EDIT</button>` : `<span class="text-[10px] text-gray-600">View Only</span>`}
       </td>
     </tr>`).join('');
 }
@@ -111,28 +145,10 @@ document.getElementById('search').addEventListener('input', async (e) => {
 });
 
 async function editItem(oldCode, oldDesc, oldPrice, oldRemarks) {
-  // Sequential Prompts for Admin Editing
-  const newCode = prompt("Edit Item Code:", oldCode) || oldCode;
-  const newDesc = prompt("Edit Description:", oldDesc) || oldDesc;
-  const newPrice = prompt("Edit Price (Numbers only):", oldPrice) || oldPrice;
+  const newPrice = prompt("Edit Price:", oldPrice) || oldPrice;
   const newRemarks = prompt("Edit Remarks:", oldRemarks || "") || oldRemarks;
-
-  const { error } = await client
-    .from('pricing_database')
-    .update({ 
-      item_code: newCode,
-      item_description: newDesc,
-      price: newPrice.replace(/,/g, ''),
-      remarks: newRemarks 
-    })
-    .eq('item_code', oldCode);
-    
-  if (error) {
-    alert("Update failed: " + error.message);
-  } else {
-    alert("Full item update successful!");
-    location.reload(); // Refresh to show changes
-  }
+  const { error } = await client.from('pricing_database').update({ price: newPrice.replace(/,/g, ''), remarks: newRemarks }).eq('item_code', oldCode);
+  if (error) alert("Update failed: " + error.message); else location.reload();
 }
 
 async function logout() { await client.auth.signOut(); window.location.href = "index.html"; }
