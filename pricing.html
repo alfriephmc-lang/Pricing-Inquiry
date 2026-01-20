@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pricing Inquiry</title>
+<title>Pricing Inquiry | Admin Portal</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -11,7 +11,6 @@
 body{ margin:0;overflow:hidden; background:radial-gradient(circle,#064e3b,#022c22); font-family:system-ui; display:flex;justify-content:center;align-items:center; min-height:100vh; }
 .glass-card{ width:95%;max-width:900px; background:var(--glass-bg); backdrop-filter:blur(20px); border:1px solid var(--glass-border); border-radius:2.5rem; padding:2rem; box-shadow:0 25px 50px -12px rgba(0,0,0,.5); position: relative; overflow: hidden; }
 
-/* Loading Bar Animation */
 #loading-bar { position: absolute; top: 0; left: 0; height: 3px; background: var(--corp-light); width: 0%; transition: width 0.3s ease; box-shadow: 0 0 10px var(--corp-light); }
 .searching #loading-bar { animation: loading-progress 2s infinite ease-in-out; }
 @keyframes loading-progress { 0% { width: 0%; left: 0; } 50% { width: 70%; left: 15%; } 100% { width: 0%; left: 100%; } }
@@ -21,8 +20,6 @@ input:focus{ border-color:var(--corp-light)!important; box-shadow:0 0 15px rgba(
 
 .badge { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
 .badge-admin { background: #10b981 !important; color: white !important; }
-
-/* Scrollbar styling */
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 </style>
@@ -38,7 +35,7 @@ input:focus{ border-color:var(--corp-light)!important; box-shadow:0 0 15px rgba(
       <div>
         <div class="flex items-center gap-2">
             <h2 class="text-white font-bold">Pricing Inquiry</h2>
-            <span id="role-display" class="badge">Loading Role...</span>
+            <span id="role-display" class="badge">Loading...</span>
         </div>
         <p class="text-emerald-400/60 text-[10px] uppercase tracking-widest">Hospital Database Access</p>
       </div>
@@ -55,18 +52,18 @@ input:focus{ border-color:var(--corp-light)!important; box-shadow:0 0 15px rgba(
           <th class="py-3 px-2">Item Code</th>
           <th class="px-2">Description</th>
           <th class="px-2">Price</th>
-          <th id="action-header" class="px-2 text-right">Remarks</th>
+          <th class="px-2">Remarks</th>
+          <th id="action-header" class="px-2 text-right">Action</th>
         </tr>
       </thead>
       <tbody id="table-body">
-        <tr><td colspan="4" class="text-center py-20 text-gray-500 italic">Enter search term to begin...</td></tr>
+        <tr><td colspan="5" class="text-center py-20 text-gray-500 italic">Enter search term to begin...</td></tr>
       </tbody>
     </table>
   </div>
 </div>
 
 <script>
-// INITIALIZE SUPABASE
 const client = window.supabase.createClient('https://yheciygtsimcduzeavlq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZWNpeWd0c2ltY2R1emVhdmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MDExMDgsImV4cCI6MjA4NDM3NzEwOH0.jfzpbDv4EX16D7_Ee_yWz2o3L_X7JWilKmefhjclguc');
 let userRole = 'staff'; 
 
@@ -74,33 +71,12 @@ async function checkAuth() {
   const { data: { session } } = await client.auth.getSession();
   if (!session) { window.location.href = "index.html"; return; }
   
+  const { data: userData } = await client.from('users').select('role').eq('email', session.user.email.trim()).single();
+  userRole = userData?.role?.toLowerCase() || 'staff';
+
   const badge = document.getElementById('role-display');
-
-  // FETCH ROLE FROM YOUR USERS TABLE
-  const { data: userData, error } = await client
-    .from('users') 
-    .select('role')
-    .eq('email', session.user.email.trim())
-    .single();
-
-  if (error) {
-    console.error("Database Error:", error.message);
-    userRole = 'staff'; 
-  } else if (userData && userData.role) {
-    userRole = userData.role.trim().toLowerCase();
-    console.log("Success! Role in DB is:", userRole);
-  }
-
-  // UPDATE THE UI BASED ON ROLE
-  if (userRole === 'admin') {
-    badge.innerText = "ADMIN";
-    badge.classList.add('badge-admin');
-    document.getElementById('action-header').innerText = "Modify";
-  } else {
-    badge.innerText = "STAFF";
-    badge.classList.remove('badge-admin');
-    document.getElementById('action-header').innerText = "Remarks";
-  }
+  badge.innerText = userRole;
+  if (userRole === 'admin') badge.classList.add('badge-admin');
 }
 
 function render(rows) {
@@ -108,61 +84,58 @@ function render(rows) {
   document.getElementById('main-card').classList.remove('searching');
 
   if (!rows || rows.length === 0) {
-    body.innerHTML = '<tr><td colspan="4" class="text-center py-20 text-gray-400">No database matches found.</td></tr>';
+    body.innerHTML = '<tr><td colspan="5" class="text-center py-20 text-gray-400">No database matches found.</td></tr>';
     return;
   }
 
-  body.innerHTML = rows.map(r => {
-    let actions = `<span class="text-gray-500 text-[10px] italic">${r.remarks || '—'}</span>`;
-    
-    // Only show the EDIT button if the user is an Admin
-    if (userRole === 'admin') {
-      actions = `<button onclick="editItem('${r.item_code}')" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-emerald-500 hover:text-white transition-all">EDIT</button>`;
-    }
-
-    return `<tr class="border-b border-white/5 hover:bg-white/5 transition-colors group">
-        <td class="py-4 px-2 font-mono text-emerald-300 group-hover:text-emerald-100">${r.item_code || '—'}</td>
-        <td class="px-2 font-medium">${r.item_description || 'No Description'}</td>
-        <td class="px-2 text-emerald-50 font-semibold">₱${r.price ? Number(String(r.price).replace(/,/g, '')).toLocaleString(undefined, {minimumFractionDigits: 2}) : '0.00'}</td>
-        <td class="px-2 text-right">${actions}</td>
-      </tr>`;
-  }).join('');
+  body.innerHTML = rows.map(r => `
+    <tr class="border-b border-white/5 hover:bg-white/5 transition-colors group">
+      <td class="py-4 px-2 font-mono text-emerald-300">${r.item_code || '—'}</td>
+      <td class="px-2 font-medium">${r.item_description || 'No Description'}</td>
+      <td class="px-2 text-emerald-50 font-semibold">₱${r.price ? Number(String(r.price).replace(/,/g, '')).toLocaleString(undefined, {minimumFractionDigits: 2}) : '0.00'}</td>
+      <td class="px-2 text-gray-400 text-xs italic">${r.remarks || '—'}</td>
+      <td class="px-2 text-right">
+        ${userRole === 'admin' ? 
+          `<button onclick="editItem('${r.item_code}', '${r.item_description}', '${r.price}', '${r.remarks}')" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-emerald-500 hover:text-white transition-all">EDIT</button>` : 
+          `<span class="text-[10px] text-gray-600">View Only</span>`}
+      </td>
+    </tr>`).join('');
 }
 
 document.getElementById('search').addEventListener('input', async (e) => {
   const q = e.target.value.trim();
   if (q.length < 2) return;
-  
   document.getElementById('main-card').classList.add('searching');
-  
-  const { data, error } = await client
-    .from('pricing_database')
-    .select('*')
-    .or(`item_code.ilike.%${q}%,item_description.ilike.%${q}%`)
-    .limit(50);
-    
+  const { data, error } = await client.from('pricing_database').select('*').or(`item_code.ilike.%${q}%,item_description.ilike.%${q}%`).limit(50);
   if (!error) render(data);
 });
 
-async function editItem(code) {
-  const newPrice = prompt(`Update unit price for ${code}:`);
-  if (!newPrice) return;
-  
+async function editItem(oldCode, oldDesc, oldPrice, oldRemarks) {
+  // Sequential Prompts for Admin Editing
+  const newCode = prompt("Edit Item Code:", oldCode) || oldCode;
+  const newDesc = prompt("Edit Description:", oldDesc) || oldDesc;
+  const newPrice = prompt("Edit Price (Numbers only):", oldPrice) || oldPrice;
+  const newRemarks = prompt("Edit Remarks:", oldRemarks || "") || oldRemarks;
+
   const { error } = await client
     .from('pricing_database')
-    .update({ price: newPrice.replace(/,/g, '') })
-    .eq('item_code', code);
+    .update({ 
+      item_code: newCode,
+      item_description: newDesc,
+      price: newPrice.replace(/,/g, ''),
+      remarks: newRemarks 
+    })
+    .eq('item_code', oldCode);
     
-  if (error) alert("Update failed: " + error.message);
-  else alert("Price updated successfully.");
+  if (error) {
+    alert("Update failed: " + error.message);
+  } else {
+    alert("Full item update successful!");
+    location.reload(); // Refresh to show changes
+  }
 }
 
-async function logout() { 
-  await client.auth.signOut(); 
-  window.location.href = "index.html"; 
-}
-
-// RUN AUTH CHECK ON LOAD
+async function logout() { await client.auth.signOut(); window.location.href = "index.html"; }
 checkAuth();
 </script>
 </body>
