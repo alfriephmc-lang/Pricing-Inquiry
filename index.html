@@ -7,6 +7,7 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
   <style>
     :root {
@@ -43,7 +44,6 @@
       overflow: hidden; 
     }
 
-    /* Scanline effect */
     .glass-card::after {
       content: "";
       position: absolute;
@@ -75,6 +75,27 @@
       color: rgba(255, 255, 255, 0.4); font-size: 10px;
       text-transform: uppercase; letter-spacing: 2px;
     }
+
+    /* Adjusted Eye Icon Styles */
+    .password-wrapper {
+      position: relative;
+    }
+    .toggle-password {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #10b981; /* Emerald-400 */
+      font-size: 14px;
+      opacity: 0.6;
+      transition: all 0.3s ease;
+      padding: 5px; /* Bigger hit area for mobile */
+    }
+    .toggle-password:hover {
+      opacity: 1;
+      text-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+    }
   </style>
 </head>
 
@@ -103,12 +124,15 @@
 
     <div>
       <label class="block text-[9px] font-bold text-emerald-500 uppercase mb-2">Access Key</label>
-      <input id="password" type="password" required placeholder="••••••••"
-        class="w-full px-4 py-3 rounded-xl outline-none text-sm" />
+      <div class="password-wrapper">
+        <input id="password" type="password" required placeholder="••••••••"
+          class="w-full px-4 py-3 rounded-xl outline-none text-sm pr-11" />
+        <i id="toggleIcon" class="fa-solid fa-eye-slash toggle-password" onclick="togglePassword()"></i>
+      </div>
     </div>
 
     <button type="submit"
-      class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase tracking-widest shadow-lg active:scale-95">
+      class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all">
       Initialize Login
     </button>
   </form>
@@ -126,6 +150,21 @@
 <div class="attribution-info">Created by: <strong>Projectvibe</strong></div>
 
 <script>
+function togglePassword() {
+  const passwordInput = document.getElementById('password');
+  const toggleIcon = document.getElementById('toggleIcon');
+  
+  if (passwordInput.type === 'password') {
+    passwordInput.type = 'text';
+    toggleIcon.classList.remove('fa-eye-slash');
+    toggleIcon.classList.add('fa-eye');
+  } else {
+    passwordInput.type = 'password';
+    toggleIcon.classList.remove('fa-eye');
+    toggleIcon.classList.add('fa-eye-slash');
+  }
+}
+
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 let molecules = [];
@@ -200,11 +239,8 @@ function animate(){
 
 window.addEventListener('resize',resize);
 resize(); animate();
-</script>
 
-<script>
 document.addEventListener("DOMContentLoaded", () => {
-  // Use your correct working key here
   const SUPABASE_URL = 'https://yheciygtsimcduzeavlq.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZWNpeWd0c2ltY2R1emVhdmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MDExMDgsImV4cCI6MjA4NDM3NzEwOH0.jfzpbDv4EX16D7_Ee_yWz2o3L_X7JWilKmefhjclguc';
 
@@ -229,7 +265,6 @@ document.addEventListener("DOMContentLoaded", () => {
       errorBox.textContent = error.message;
       errorBox.classList.remove('hidden');
     } else {
-      // Redirect to the pricing inquiry page
       window.location.href = "pricing.html";
     }
   });
